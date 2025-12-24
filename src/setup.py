@@ -4,7 +4,7 @@ import torch
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from ..src.models.ensemble import EnsembleVulnDetector
+from models.ensemble import EnsembleVulnDetector
 from src.training.trainer import VulnDetectionTrainer
 from src.data_pipeline.preprocessor import SecurityPreprocessor
 from src.data_pipeline.tokenizer import MultiEmbeddingTokenizer
