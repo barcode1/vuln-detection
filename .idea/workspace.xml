@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a2dbe7b3-0928-46c3-8e99-16a1e1747b86" name="Changes" comment="" />
+    <list default="true" id="a2dbe7b3-0928-46c3-8e99-16a1e1747b86" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -48,6 +50,9 @@
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\BARCODE\Desktop\vuln-detection" />
     </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\BARCODE\Desktop\vuln-detection\src" />
+    </key>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -64,7 +69,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1766591179951</updated>
-      <workItem from="1766591180995" duration="3023000" />
+      <workItem from="1766591180995" duration="3438000" />
     </task>
     <servers />
   </component>
