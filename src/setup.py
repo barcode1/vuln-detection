@@ -112,6 +112,13 @@ def main():
     tokenizer = MultiEmbeddingTokenizer(config)
     tokenizer_path = os.path.join(BASE_DIR, 'data', 'embeddings')
 
+    # if os.path.exists(os.path.join(tokenizer_path, 'word2vec_security.model')):
+    #     tokenizer.load_word_embeddings(tokenizer_path)
+    # else:
+    #     os.makedirs(tokenizer_path, exist_ok=True)
+    #     tokenizer.train_word_embeddings(processed_texts)
+    #     tokenizer.save_word_embeddings(tokenizer_path)
+    # در setup.py
     if os.path.exists(os.path.join(tokenizer_path, 'word2vec_security.model')):
         tokenizer.load_word_embeddings(tokenizer_path)
     else:

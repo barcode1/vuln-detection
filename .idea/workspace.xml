@@ -5,7 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a2dbe7b3-0928-46c3-8e99-16a1e1747b86" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/hyperparams.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/hyperparams.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/data_pipeline/preprocessor.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/data_pipeline/preprocessor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/data_pipeline/tokenizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/data_pipeline/tokenizer.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

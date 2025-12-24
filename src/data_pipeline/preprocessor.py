@@ -58,12 +58,11 @@ class SecurityPreprocessor:
 
     def fit_transform(self, texts: List[str]) -> List[str]:
         processed = []
-        for text in texts:
+        for i, text in enumerate(texts):
             try:
-                # در fit_transform
-                if self.config.get('verbose', False):
-                    self.logger.info(f"Original: {text[:50]}...")
-                    self.logger.info(f"Processed: {processed[-1][:50]}...")
+                # ذخیره نسخه اصلی برای logging
+                original_sample = text[:100]
+
                 # 1. URL Decoding (مهم برای تزریق‌ها)
                 if self.config.get('url_decode', True):
                     text = urllib.parse.unquote_plus(text)
@@ -73,17 +72,23 @@ class SecurityPreprocessor:
                 text = re.sub(r'/\*.*?\*/', '', text, flags=re.DOTALL)
                 text = re.sub(r'\s+', ' ', text).strip()
 
-                # 3. ✅ Decode Hex/Decimal (جدید!)
+                # 3. Decode Hex/Decimal (جدید!)
                 if self.config.get('decode_obfuscation', True):
                     text = self._decode_hex_decimal(text)
 
-                # 4. ✅ Preserve case-sensitive patterns (حفظ حروف بزرگ)
+                # 4. Preserve case-sensitive patterns (حفظ حروف بزرگ)
                 text = self._preserve_malicious_patterns(text)
 
+                # ✅ Logging در جای درست
+                if self.config.get('verbose', False):
+                    self.logger.info(f"Sample {i}: Original: {original_sample}...")
+                    self.logger.info(f"Sample {i}: Processed: {text[:100]}...")
+
                 processed.append(text)
+
             except Exception as e:
-                self.logger.error(f"Preprocessing error: {e}")
-                processed.append("")
+                self.logger.error(f"Preprocessing error at sample {i}: {e}")
+                processed.append("")  # اضافه کردن متن خالی در صورت خطا
 
         return processed
 
@@ -93,25 +98,21 @@ class SecurityPreprocessor:
         """
 
         # Pattern 1: char(47,101,116,99) → "/etc"
-        # Pattern 2: 0x2f657463 → "/etc"
-        # Pattern 3: \x2f\x65\x74\x63 → "/etc"
-
-        # Decode char(n,n,n)
         def decode_char(match):
             try:
                 numbers = match.group(1).split(',')
-                chars = [chr(int(n.strip())) for n in numbers]
+                chars = [chr(int(n.strip())) for n in numbers if n.strip().isdigit()]
                 return ''.join(chars)
             except:
-                return match.group(0)  # برگرداندن اصل در صورت خطا
+                return match.group(0)
 
         text = re.sub(r'char\s*\(\s*([\d,]+)\s*\)', decode_char, text, flags=re.IGNORECASE)
 
-        # Decode hexadecimal (0x...)
+        # Pattern 2: 0x2f657463 → "/etc"
         def decode_hex(match):
             try:
                 hex_str = match.group(1)
-                if len(hex_str) % 2 == 0:  # باید زوج باشد
+                if len(hex_str) % 2 == 0:
                     return bytes.fromhex(hex_str).decode('utf-8', errors='ignore')
                 return match.group(0)
             except:
@@ -119,7 +120,7 @@ class SecurityPreprocessor:
 
         text = re.sub(r'0x([0-9a-fA-F]+)', decode_hex, text)
 
-        # Decode \xXX (C-style hex)
+        # Pattern 3: \x2f → "/"
         def decode_c_hex(match):
             try:
                 hex_str = match.group(0)[2:]  # حذف \x
@@ -136,7 +137,7 @@ class SecurityPreprocessor:
         حفظ الگوهای مخرب بدون تغییر case
         """
         # SQL keywords - حفظ حروف بزرگ برای تشخیص بهتر
-        sql_keywords = r'\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|WHERE|OR|AND|FROM|TABLE|CREATE|ALTER|EXEC|SLEEP)\b'
+        sql_keywords = r'\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|WHERE|OR|AND|FROM|TABLE|CREATE|ALTER|EXEC)\b'
         text = re.sub(sql_keywords, lambda m: m.group(1), text, flags=re.IGNORECASE)
 
         # XSS patterns - حفظ حساسیت به case
