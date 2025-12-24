@@ -49,3 +49,8 @@ embedding:
   embedding_dim: 300
   embedding_dropout: 0.2
   attention_dropout: 0.2
+#===================preprocessing====================
+preprocessing:
+  url_decode: true
+  decode_obfuscation: true  # برای hex/decimal
+  preserve_case: true       # برای حفظ حروف بزرگ
