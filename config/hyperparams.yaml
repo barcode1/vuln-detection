@@ -44,3 +44,8 @@ anomaly_detection:
 fusion:
   weights: [0.6, 0.4]  # [classifier, anomaly]
   threshold: 0.5
+# ==================== جاسازی‌ها ====================
+embedding:
+  embedding_dim: 300
+  embedding_dropout: 0.2
+  attention_dropout: 0.2
