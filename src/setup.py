@@ -66,7 +66,7 @@ def main():
     DATA_PATH = os.path.join(BASE_DIR, 'data', 'datasets', 'SQLInjection_XSS_CommandInjection_MixDataset.1.0.0.csv')
 
     # بارگذاری پیکربندی
-    with open(CONFIG_PATH, 'r') as f:
+    with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
 
     # ✅ بارگذاری داده‌ها
