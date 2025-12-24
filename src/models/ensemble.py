@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from typing import Dict, Any, Optional
-from src.models.classifier import SecBERTVulnClassifier
+from src.models.classifier import CodeBERTVulnClassifier
 from src.models.anomaly_detector import ZeroDayAnomalyDetector
 import numpy as np
 
@@ -15,7 +16,7 @@ class EnsembleVulnDetector(nn.Module):
         super().__init__()
 
         # شاخه اصلی طبقه‌بندی
-        self.classifier = SecBERTVulnClassifier(config)
+        self.classifier = CodeBERTVulnClassifier(config)
 
         # شاخه آنومالی‌دیتکشن
         self.anomaly_detector = ZeroDayAnomalyDetector(config['anomaly_detection'])

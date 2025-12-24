@@ -1,32 +1,36 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import AutoModel
-from typing import Dict, Any, Optional
+import numpy as np
+from transformers import AutoModel, AutoConfig
+from typing import Dict, Any, Optional, Tuple
 from src.models.embedding_layer import MultiEmbeddingFusion
 from src.models.feature_extractor import CNNBiLSTMFeatureExtractor
-import numpy as np
-
-class SecBERTVulnClassifier(nn.Module):
+class CodeBERTVulnClassifier(nn.Module):
     """
-    طبقه‌بندی آسیب‌پذیری‌های تزریقی با استفاده از ترکیب:
-    - Word2Vec + FastText + Sec-BERT (MultiEmbeddingFusion)
-    - CNN-BiLSTM Feature Extractor
-    - طبقه‌بندی نهایی با Sec-BERT
-    - Focal Loss برای عدم تعادل کلاس‌ها
+    طبقه‌بندی نهایی با CodeBERT (فاین‌تون‌شده)
     """
 
     def __init__(self, config: Dict[str, Any]):
         super().__init__()
         self.num_labels = config['num_labels']
 
-        # ترکیب جاسازی‌های معنایی (Word2Vec + FastText + Sec-BERT)
+        # 1. ترکیب جاسازی‌ها (بدون طبقه‌بندی)
         self.embedding_fusion = MultiEmbeddingFusion(config)
 
-        # استخراج ویژگی‌های پیشرفته (CNN-BiLSTM)
+        # 2. استخراج ویژگی‌های پیشرفته
         self.feature_extractor = CNNBiLSTMFeatureExtractor(config)
 
-        # طبقه‌بندی نهایی
+        # 3. CodeBERT برای طبقه‌بندی نهایی
+        self.codebert = AutoModel.from_pretrained(
+            config['codebert']['model_name'],
+            output_hidden_states=True
+        )
+
+        # فریز کردن بخشی از CodeBERT
+        self._freeze_codebert_layers(config['codebert'].get('freeze_layers', 6))
+
+        # Classification head
         self.classifier = nn.Sequential(
             nn.Linear(768 * 2, 768),  # CLS + CNN-BiLSTM features
             nn.ReLU(),
@@ -37,15 +41,24 @@ class SecBERTVulnClassifier(nn.Module):
             nn.Linear(512, self.num_labels)
         )
 
-        # Layer normalization
-        self.layer_norm = nn.LayerNorm(768 * 2)
-
-        # Loss function: Focal Loss
+        # Loss
         self.loss_fn = FocalLoss(
             alpha=config.get('focal_alpha', [0.25, 0.25, 0.25, 0.25]),
             gamma=config.get('focal_gamma', 2.0),
             num_classes=self.num_labels
         )
+
+        # Layer normalization
+        self.layer_norm = nn.LayerNorm(768 * 2)
+
+    def _freeze_codebert_layers(self, num_layers: int):
+        """فریز کردن لایه‌های اولیه CodeBERT"""
+        for param in self.codebert.embeddings.parameters():
+            param.requires_grad = False
+
+        for layer in self.codebert.encoder.layer[:num_layers]:
+            for param in layer.parameters():
+                param.requires_grad = False
 
     def forward(self,
                 input_ids: torch.Tensor,
@@ -53,38 +66,34 @@ class SecBERTVulnClassifier(nn.Module):
                 word2vec_embeds: torch.Tensor,
                 fasttext_embeds: torch.Tensor,
                 labels: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
-        """
-        Forward pass کامل
-        Args:
-            input_ids: [batch_size, seq_len]
-            attention_mask: [batch_size, seq_len]
-            word2vec_embeds: [batch_size, 300]
-            fasttext_embeds: [batch_size, 300]
-            labels: Optional [batch_size]
-        """
-        # 1. ترکیب جاسازی‌ها + وزن‌دهی کلمات کلیدی
-        fused_embeds, sec_bert_embeds, cls_token = self.embedding_fusion(
+
+        # 1. ترکیب جاسازی‌ها + وزن‌دهی
+        fused_embeds, sec_bert_hidden = self.embedding_fusion(
             input_ids, attention_mask, word2vec_embeds, fasttext_embeds
         )
 
-        # 2. استخراج ویژگی‌های پیچیده
-        cnn_bilstm_features, attn_weights = self.feature_extractor(sec_bert_embeds)
+        # 2. استخراج ویژگی‌های پیشرفته
+        cnn_bilstm_features, attn_weights = self.feature_extractor(sec_bert_hidden)
 
-        # 3. ترکیب با CLS token Sec-BERT
-        combined = torch.cat([cls_token, cnn_bilstm_features], dim=-1)
+        # 3. CodeBERT برای درک معنای کد
+        # CodeBERT بهتر از Sec-BERT برای طبقه‌بندی است چون روی کد آموزش دیده
+        codebert_outputs = self.codebert(inputs_embeds=fused_embeds, attention_mask=attention_mask)
+        codebert_cls = codebert_outputs.last_hidden_state[:, 0, :]  # [CLS] token
+
+        # 4. ترکیب ویژگی‌ها
+        combined = torch.cat([codebert_cls, cnn_bilstm_features], dim=-1)
         combined = self.layer_norm(combined)
 
-        # 4. طبقه‌بندی نهایی
+        # 5. طبقه‌بندی نهایی
         logits = self.classifier(combined)
 
         outputs = {
             'logits': logits,
-            'features': cnn_bilstm_features,  # برای آنومالی‌دیتکشن
+            'features': cnn_bilstm_features,
             'attention_weights': attn_weights,
-            'fused_embeddings': fused_embeds
+            'codebert_hidden': codebert_cls
         }
 
-        # 5. محاسبه loss
         if labels is not None:
             outputs['loss'] = self.loss_fn(logits, labels)
 
