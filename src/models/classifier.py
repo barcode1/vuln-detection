@@ -35,7 +35,7 @@ class CodeBERTVulnClassifier(nn.Module):
 
         # Classification head
         self.classifier = nn.Sequential(
-            nn.Linear(768 * 2, 768),  # CLS + CNN-BiLSTM features
+            nn.Linear(combined_dim, 768),  # CLS + CNN-BiLSTM features
             nn.ReLU(),
             nn.Dropout(config.get('classifier_dropout', 0.3)),
             nn.Linear(768, 512),
