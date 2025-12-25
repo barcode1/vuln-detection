@@ -185,26 +185,30 @@ class MultiEmbeddingFusion(nn.Module):
                                  input_ids: torch.Tensor) -> torch.Tensor:
         """
         وزن‌دهی به کلمات کلیدی مخرب
+        embeddings: [batch, seq_len, 768]
+        input_ids: [batch, seq_len]
         """
-        # ماسک کلمات کلیدی
-        # input_ids: [batch, seq_len]
-        # self.keyword_ids: [num_keywords]
-
+        # 1. ماسک boolean: کجا کلمه کلیدی است
         mask = torch.isin(input_ids, self.keyword_ids.to(input_ids.device))
-        # mask: [batch, seq_len] (True/False)
+        # mask: [batch, seq_len]
 
-        # افزودن یک بعد برای embeddings
-        weights = torch.ones_like(embeddings)  # [batch, seq_len, 768]
+        # 2. گستراندن ماسک به shape embeddings
+        mask_expanded = mask.unsqueeze(-1).expand_as(embeddings)
+        # mask_expanded: [batch, seq_len, 768]
 
-        # جایی که mask=True، وزن بیشتر
+        # 3. وزن پایه (۱) برای همه جا
+        weights = torch.ones_like(embeddings)
+
+        # 4. وزن کلیدی (یادگیرنده) و broadcast
         weight_factor = self.keyword_weights.sigmoid() * 2.0  # [768]
+        weight_factor_broadcasted = weight_factor.view(1, 1, -1).expand_as(embeddings)
+        # weight_factor_broadcasted: [batch, seq_len, 768]
 
-        # broadcast mask به تمام dimensions
-        mask_expanded = mask.unsqueeze(-1).expand_as(embeddings)  # [batch, seq_len, 768]
+        # 5. جایی که mask=True، وزن کلیدی را اعمال کن
+        weights = torch.where(mask_expanded, weight_factor_broadcasted, weights)
+        # where(condition, value_if_true, value_if_false)
 
-        # اعمال وزن
-        weights[mask_expanded] = weight_factor[mask_expanded]
-
+        # 6. ضرب در embeddings
         return embeddings * weights
 
     def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor,
