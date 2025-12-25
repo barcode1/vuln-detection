@@ -81,8 +81,15 @@ class MultiEmbeddingFusion(nn.Module):
         # Fusion
         stack = torch.stack([sec_bert_embeds, w2v_proj, ft_proj], dim=2)
         stack_flat = stack.view(batch_size * seq_len, 3, 768)
+        # fused_flat, _ = self.fusion_attention(stack_flat, stack_flat, stack_flat)
+        # fused = fused_flat.view(batch_size, seq_len, 768)
         fused_flat, _ = self.fusion_attention(stack_flat, stack_flat, stack_flat)
-        fused = fused_flat.view(batch_size, seq_len, 768)
+        # fused_flat: [batch*seq_len, 3, 768]
+
+        weights = torch.softmax(self.embedding_weights, dim=0)  # [3]
+        fused_weighted = fused_flat * weights.view(1, 3, 1)  # [batch*seq_len, 3, 768]
+        fused_summed = torch.sum(fused_weighted, dim=1)  # [batch*seq_len, 768]
+        fused = fused_summed.view(batch_size, seq_len, 768)  # [batch, seq_len, 768]
 
         # Keyword weighting
         weighted = self._apply_keyword_weighting(fused, input_ids)
