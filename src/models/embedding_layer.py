@@ -104,7 +104,7 @@ import os
 
 # اضافه کردن مسیر برای import
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from vulnerability_keywords import VULNERABILITY_KEYWORDS
+from src.models.vulnerability_keywords import VULNERABILITY_KEYWORDS
 
 
 class MultiEmbeddingFusion(nn.Module):
