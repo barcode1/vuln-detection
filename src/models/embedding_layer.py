@@ -39,7 +39,7 @@ class MultiEmbeddingFusion(nn.Module):
             dropout=config.get('attention_dropout', 0.2),
             batch_first=True
         )
-
+        self.embedding_weights = nn.Parameter(torch.ones(3) / 3.0)
         # Keyword weighting
         self.keyword_weights = nn.Parameter(torch.ones(768) * 1.5)
         self.layer_norm = nn.LayerNorm(768)

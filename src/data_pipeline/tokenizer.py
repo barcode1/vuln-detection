@@ -237,7 +237,7 @@ class MultiEmbeddingTokenizer:
             self.fasttext = FastText.load(ft_path)
             print(f"✅ loaded models at: {load_path}")
         else:
-            raise FileNotFoundError(f"مدل‌ها در {load_path} یافت نشدند!")
+            raise FileNotFoundError(f"models at  {load_path} not found!")
 
     def encode(self, texts: List[str]) -> Dict[str, Any]:
         return {
