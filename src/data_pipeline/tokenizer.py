@@ -219,7 +219,7 @@ class MultiEmbeddingTokenizer:
         self.word2vec.save(os.path.join(save_path, 'word2vec_security.model'))
         self.fasttext.save(os.path.join(save_path, 'fasttext_security.model'))
 
-        print(f"✅ مدل‌ها ذخیره شدند در: {save_path}")
+        print(f"✅ saved models at: {save_path}")
 
     def load_word_embeddings(self, path: str = None):
         """بارگذاری مدل‌های آموزش‌دیده
@@ -235,7 +235,7 @@ class MultiEmbeddingTokenizer:
         if os.path.exists(w2v_path) and os.path.exists(ft_path):
             self.word2vec = Word2Vec.load(w2v_path)
             self.fasttext = FastText.load(ft_path)
-            print(f"✅ مدل‌ها بارگذاری شدند از: {load_path}")
+            print(f"✅ loaded models at: {load_path}")
         else:
             raise FileNotFoundError(f"مدل‌ها در {load_path} یافت نشدند!")
 
