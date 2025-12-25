@@ -267,13 +267,27 @@ class VulnDetectionTrainer:
 
         # Optimizer برای CodeBERT (نه Sec-BERT)
         # ✅ تغییر: classifier.named_parameters() → codebert
-        codebert_params = [p for n, p in model.classifier.named_parameters() if 'codebert' in n]
-        other_params = [p for n, p in model.classifier.named_parameters() if 'codebert' not in n]
+        # codebert_params = [p for n, p in model.classifier.named_parameters() if 'codebert' in n]
+        # other_params = [p for n, p in model.classifier.named_parameters() if 'codebert' not in n]
+        #
+        # self.optimizer = AdamW([
+        #     {'params': codebert_params, 'lr': config['classification']['learning_rate']},
+        #     {'params': other_params, 'lr': config['classification']['learning_rate'] * 10}
+        # ], weight_decay=config['classification']['weight_decay'])
+        codebert_params = self.model.classifier.codebert.parameters()
+
+        other_params = (
+                list(self.model.classifier.embedding_fusion.parameters()) +
+                list(self.model.classifier.feature_extractor.parameters()) +
+                list(self.model.classifier.classifier.parameters())
+        )
 
         self.optimizer = AdamW([
-            {'params': codebert_params, 'lr': config['classification']['learning_rate']},
-            {'params': other_params, 'lr': config['classification']['learning_rate'] * 10}
-        ], weight_decay=config['classification']['weight_decay'])
+            {'params': codebert_params, 'lr': float(config['codebert']['learning_rate'])},
+            {'params': other_params, 'lr': float(config['codebert']['learning_rate']) * 10}
+        ], weight_decay=float(config['codebert']['weight_decay']))
+        print("CodeBERT params:", sum(p.numel() for p in self.model.codebert.parameters() if p.requires_grad))
+        print("Optimizer params:", sum(p.numel() for g in optimizer.param_groups for p in g['params']))
 
         # Scheduler
         total_steps = len(self.train_loader) * config['classification']['epochs']  # ✅ تغییر
