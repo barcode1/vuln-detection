@@ -274,7 +274,11 @@ class VulnDetectionTrainer:
         #     {'params': codebert_params, 'lr': config['classification']['learning_rate']},
         #     {'params': other_params, 'lr': config['classification']['learning_rate'] * 10}
         # ], weight_decay=config['classification']['weight_decay'])
-        codebert_params = self.model.classifier.codebert.parameters()
+        # codebert_params = self.model.classifier.codebert.parameters()
+
+        codebert_params = list(self.model.classifier.codebert.parameters())
+
+        print("Trainable CodeBERT params:", sum(p.numel() for p in codebert_params if p.requires_grad))
 
         other_params = (
                 list(self.model.classifier.embedding_fusion.parameters()) +
