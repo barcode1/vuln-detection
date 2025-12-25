@@ -10,11 +10,16 @@ sec_bert:
   model_name: "jackaduma/SecBERT"
   freeze_layers: 8
 
-# ==================== CodeBERT (برای طبقه‌بندی) ====================
-codebert:
-  model_name: "microsoft/codebert-base"  # یا "huggingface/CodeBERT"
+# ==================== طبقه‌بندی (CodeBERT) ====================
+classification:
+  model_name: "microsoft/codebert-base"
   freeze_layers: 6
-  learning_rate: 2e-5  # برای فاین‌تون CodeBERT
+  learning_rate: 2e-5
+  weight_decay: 0.01
+  warmup_steps: 500
+  batch_size: 16
+  epochs: 5
+  max_grad_norm: 1.0
 
 # ==================== CNN-BiLSTM ====================
 cnn_bilstm:

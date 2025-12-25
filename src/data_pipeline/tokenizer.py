@@ -178,28 +178,66 @@ class MultiEmbeddingTokenizer:
 
         print(f"✅ save models to : {self.save_dir}")
 
-    def save_word_embeddings(self):
-        """متد جدید برای ذخیره مدل‌ها"""
+    # def save_word_embeddings(self):
+    #     """متد جدید برای ذخیره مدل‌ها"""
+    #     if self.word2vec is None or self.fasttext is None:
+    #         raise ValueError("frist train models!")
+    #
+    #     self.word2vec.save(os.path.join(self.save_dir, 'word2vec_security.model'))
+    #     self.fasttext.save(os.path.join(self.save_dir, 'fasttext_security.model'))
+    #
+    # def load_word_embeddings(self, path: str = None):
+    #     """بارگذاری مدل‌های آموزش‌دیده"""
+    #     if path is not None:
+    #         self.save_dir = path
+    #
+    #     w2v_path = os.path.join(self.save_dir, 'word2vec_security.model')
+    #     ft_path = os.path.join(self.save_dir, 'fasttext_security.model')
+    #
+    #     if os.path.exists(w2v_path) and os.path.exists(ft_path):
+    #         self.word2vec = Word2Vec.load(w2v_path)
+    #         self.fasttext = FastText.load(ft_path)
+    #         print(f"✅ models load to : {self.save_dir}")
+    #     else:
+    #         raise FileNotFoundError(f"مدل‌ها در {self.save_dir} یافت نشدند!")
+    def save_word_embeddings(self, path: str = None):
+        """متد جدید برای ذخیره مدل‌ها
+
+        Args:
+            path: مسیر دلخواه برای ذخیره (اختیاری). اگر ندادید از self.save_dir استفاده می‌شود.
+        """
         if self.word2vec is None or self.fasttext is None:
             raise ValueError("frist train models!")
 
-        self.word2vec.save(os.path.join(self.save_dir, 'word2vec_security.model'))
-        self.fasttext.save(os.path.join(self.save_dir, 'fasttext_security.model'))
+        # اگر مسیر داده شد، از آن استفاده کن، وگرنه از save_dir
+        save_path = path if path is not None else self.save_dir
+
+        # ساخت پوشه اگر وجود نداشت
+        os.makedirs(save_path, exist_ok=True)
+
+        # ذخیره مدل‌ها
+        self.word2vec.save(os.path.join(save_path, 'word2vec_security.model'))
+        self.fasttext.save(os.path.join(save_path, 'fasttext_security.model'))
+
+        print(f"✅ مدل‌ها ذخیره شدند در: {save_path}")
 
     def load_word_embeddings(self, path: str = None):
-        """بارگذاری مدل‌های آموزش‌دیده"""
-        if path is not None:
-            self.save_dir = path
+        """بارگذاری مدل‌های آموزش‌دیده
 
-        w2v_path = os.path.join(self.save_dir, 'word2vec_security.model')
-        ft_path = os.path.join(self.save_dir, 'fasttext_security.model')
+        Args:
+            path: مسیر دلخواه برای بارگذاری (اختیاری). اگر ندادید از self.save_dir استفاده می‌شود.
+        """
+        load_path = path if path is not None else self.save_dir
+
+        w2v_path = os.path.join(load_path, 'word2vec_security.model')
+        ft_path = os.path.join(load_path, 'fasttext_security.model')
 
         if os.path.exists(w2v_path) and os.path.exists(ft_path):
             self.word2vec = Word2Vec.load(w2v_path)
             self.fasttext = FastText.load(ft_path)
-            print(f"✅ models load to : {self.save_dir}")
+            print(f"✅ مدل‌ها بارگذاری شدند از: {load_path}")
         else:
-            raise FileNotFoundError(f"مدل‌ها در {self.save_dir} یافت نشدند!")
+            raise FileNotFoundError(f"مدل‌ها در {load_path} یافت نشدند!")
 
     def encode(self, texts: List[str]) -> Dict[str, Any]:
         return {

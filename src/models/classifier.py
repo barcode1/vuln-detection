@@ -76,7 +76,7 @@ class CodeBERTVulnClassifier(nn.Module):
         cnn_bilstm_features, attn_weights = self.feature_extractor(sec_bert_hidden)
 
         # 3. CodeBERT برای درک معنای کد
-        # CodeBERT بهتر از Sec-BERT برای طبقه‌بندی است چون روی کد آموزش دیده
+
         codebert_outputs = self.codebert(inputs_embeds=fused_embeds, attention_mask=attention_mask)
         codebert_cls = codebert_outputs.last_hidden_state[:, 0, :]  # [CLS] token
 
