@@ -164,6 +164,7 @@ class VulnDetectionTrainer:
             all_labels, all_preds, average='weighted', zero_division=0
         )
         accuracy = accuracy_score(all_labels, all_preds)
+        torch.cuda.empty_cache()
 
         return {
             'accuracy': accuracy,
