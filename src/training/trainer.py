@@ -7,6 +7,8 @@ from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 import numpy as np
 from typing import Dict, Any
 import logging
+import time
+from datetime import timedelta
 
 
 class VulnDetectionTrainer:
@@ -17,17 +19,34 @@ class VulnDetectionTrainer:
         self.config = config
 
         # DataLoaders
+        # self.train_loader = DataLoader(
+        #     train_dataset,
+        #     batch_size=config['classification']['batch_size'],  # ✅ تغییر
+        #     shuffle=True,
+        #     num_workers=2
+        # )
+        # self.val_loader = DataLoader(
+        #     val_dataset,
+        #     batch_size=config['classification']['batch_size'],  # ✅ تغییر
+        #     shuffle=False,
+        #     num_workers=2
+        # )
+        # ✅ DataLoaders
         self.train_loader = DataLoader(
             train_dataset,
-            batch_size=config['classification']['batch_size'],  # ✅ تغییر
+            batch_size=config['classification']['batch_size'],
             shuffle=True,
-            num_workers=2
+            num_workers=config['classification'].get('num_workers', 8),  # ✅ از کانفیگ بخون
+            pin_memory=config['classification'].get('pin_memory', True),  # ✅ True بذار
+            persistent_workers=True  # ✅ جدید: سرعت بیشتر در epoch‌های بعدی
         )
         self.val_loader = DataLoader(
             val_dataset,
-            batch_size=config['classification']['batch_size'],  # ✅ تغییر
+            batch_size=config['classification']['batch_size'],
             shuffle=False,
-            num_workers=2
+            num_workers=config['classification'].get('num_workers', 8),
+            pin_memory=config['classification'].get('pin_memory', True),
+            persistent_workers=True
         )
 
         # Optimizer برای CodeBERT (نه Sec-BERT)
@@ -154,43 +173,107 @@ class VulnDetectionTrainer:
             'loss': np.mean(all_losses)
         }
 
+    # def train(self):
+    #     """آموزش کامل مدل"""
+    #     self.logger.info("=" * 50)
+    #     self.logger.info("شروع آموزش مدل تشخیص آسیب‌پذیری")
+    #     self.logger.info("=" * 50)
+    #
+    #     for epoch in range(self.config['classification']['epochs']):
+    #         self.logger.info(f"\n{'=' * 20} Epoch {epoch + 1}/{self.config['classification']['epochs']} {'=' * 20}")
+    #
+    #         # آموزش
+    #         train_loss = self.train_epoch(epoch)
+    #         self.logger.info(f"Train Loss: {train_loss:.4f}")
+    #
+    #         # اعتبارسنجی
+    #         metrics = self.validate()
+    #         self.logger.info(f"Val Accuracy: {metrics['accuracy']:.4f}")
+    #         self.logger.info(f"Val F1: {metrics['f1']:.4f}")
+    #         self.logger.info(f"Val Loss: {metrics['loss']:.4f}")
+    #
+    #         # Early stopping
+    #         if metrics['f1'] > self.best_f1:
+    #             self.best_f1 = metrics['f1']
+    #             self.patience_counter = 0
+    #             self._save_checkpoint(epoch, metrics)
+    #             self.logger.info("✅ مدل بهتر ذخیره شد!")
+    #         else:
+    #             self.patience_counter += 1
+    #             self.logger.info(f"📉 Early stopping counter: {self.patience_counter}/{self.config.get('patience', 3)}")
+    #
+    #             if self.patience_counter >= self.config.get('patience', 3):
+    #                 self.logger.info("🛑 Early stopping فعال شد!")
+    #                 break
+    #
+    #     self.logger.info("\n" + "=" * 50)
+    #     self.logger.info("آموزش پایان یافت!")
+    #     self.logger.info(f"بهترین F1: {self.best_f1:.4f}")
+    #     self.logger.info("=" * 50)
+    #
+    #     # بارگذاری بهترین مدل
+    #     self._load_best_model()
     def train(self):
-        """آموزش کامل مدل"""
-        self.logger.info("=" * 50)
-        self.logger.info("شروع آموزش مدل تشخیص آسیب‌پذیری")
-        self.logger.info("=" * 50)
+        """آموزش کامل مدل - با زمان‌سنجی و خروجی زیبا"""
+        self.logger.info("=" * 60)
+        self.logger.info("🎯 شروع آموزش مدل تشخیص آسیب‌پذیری")
+        self.logger.info(f"📱 دستگاه: {self.device}")
+        self.logger.info("=" * 60)
+
+        start_time = time.time()  # زمان شروع کل آموزش
 
         for epoch in range(self.config['classification']['epochs']):
-            self.logger.info(f"\n{'=' * 20} Epoch {epoch + 1}/{self.config['classification']['epochs']} {'=' * 20}")
+            epoch_start = time.time()  # زمان شروع این epoch
 
-            # آموزش
+            # ==================== آموزش ====================
+            self.logger.info(f"\n🚀 Epoch {epoch + 1}/{self.config['classification']['epochs']} | شروع آموزش...")
             train_loss = self.train_epoch(epoch)
-            self.logger.info(f"Train Loss: {train_loss:.4f}")
 
-            # اعتبارسنجی
+            # محاسبه زمان آموزش
+            train_time = time.time() - epoch_start
+
+            # ==================== اعتبارسنجی ====================
+            self.logger.info(f"🔍 شروع اعتبارسنجی...")
             metrics = self.validate()
-            self.logger.info(f"Val Accuracy: {metrics['accuracy']:.4f}")
-            self.logger.info(f"Val F1: {metrics['f1']:.4f}")
-            self.logger.info(f"Val Loss: {metrics['loss']:.4f}")
 
-            # Early stopping
+            # محاسبه کل زمان epoch
+            epoch_time = time.time() - epoch_start
+
+            # ✅ نمایش نتایج به صورت جدولی واضح
+            print("\n" + "=" * 70)
+            print(f"📊 نتایج Epoch {epoch + 1}/{self.config['classification']['epochs']}")
+            print("=" * 70)
+            print(f"⏱️  زمان کل:              {str(timedelta(seconds=int(epoch_time)))}")
+            print(f"   └─ زمان آموزش:        {str(timedelta(seconds=int(train_time)))}")
+            print(f"   └─ زمان اعتبارسنجی:   {str(timedelta(seconds=int(epoch_time - train_time)))}")
+            print("─" * 70)
+            print(f"📈 Loss آموزش:           {train_loss:.4f}")
+            print(f"✅ دقت اعتبارسنجی:       {metrics['accuracy']:.4f}  (Accuracy)")
+            print(f"🎯 F1-Score اعتبارسنجی:  {metrics['f1']:.4f}")
+            print(f"📉 Loss اعتبارسنجی:      {metrics['loss']:.4f}")
+            print("=" * 70 + "\n")
+
+            # ==================== ذخیره و Early Stopping ====================
             if metrics['f1'] > self.best_f1:
                 self.best_f1 = metrics['f1']
                 self.patience_counter = 0
                 self._save_checkpoint(epoch, metrics)
-                self.logger.info("✅ مدل بهتر ذخیره شد!")
+                self.logger.info("💾 مدل بهترین ذخیره شد!")
             else:
                 self.patience_counter += 1
-                self.logger.info(f"📉 Early stopping counter: {self.patience_counter}/{self.config.get('patience', 3)}")
+                self.logger.info(f"📉 Early stopping: {self.patience_counter}/{self.config.get('patience', 3)}")
 
                 if self.patience_counter >= self.config.get('patience', 3):
                     self.logger.info("🛑 Early stopping فعال شد!")
                     break
 
-        self.logger.info("\n" + "=" * 50)
-        self.logger.info("آموزش پایان یافت!")
-        self.logger.info(f"بهترین F1: {self.best_f1:.4f}")
-        self.logger.info("=" * 50)
+        # ==================== خلاصه نهایی ====================
+        total_time = time.time() - start_time
+        print("\n" + "🎉" * 35)
+        self.logger.info(f"🏁 آموزش پایان یافت!")
+        self.logger.info(f"⏱️  زمان کل: {str(timedelta(seconds=int(total_time)))}")
+        self.logger.info(f"📊 بهترین F1: {self.best_f1:.4f}")
+        print("🎉" * 35)
 
         # بارگذاری بهترین مدل
         self._load_best_model()
@@ -227,7 +310,11 @@ class VulnDetectionTrainer:
         normal_features = []
 
         with torch.no_grad():
-            for batch in DataLoader(normal_dataset, batch_size=32):
+            for batch in DataLoader(
+            normal_dataset,
+            batch_size=256,
+            num_workers=8,
+            pin_memory=True):
                 input_ids = batch['input_ids'].to(self.device)
                 attention_mask = batch['attention_mask'].to(self.device)
                 word2vec = batch['word2vec_embeds'].to(self.device)
