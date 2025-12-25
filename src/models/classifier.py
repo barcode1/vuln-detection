@@ -23,12 +23,12 @@ class CodeBERTVulnClassifier(nn.Module):
 
         # 3. CodeBERT برای طبقه‌بندی نهایی
         self.codebert = AutoModel.from_pretrained(
-            config['codebert']['model_name'],
+            config['classification']['model_name'],
             output_hidden_states=True
         )
 
         # فریز کردن بخشی از CodeBERT
-        self._freeze_codebert_layers(config['codebert'].get('freeze_layers', 6))
+        self._freeze_codebert_layers(config['classification'].get('freeze_layers', 6))
 
         # Classification head
         self.classifier = nn.Sequential(
