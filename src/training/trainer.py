@@ -9,7 +9,7 @@ from typing import Dict, Any
 import logging
 import time
 from datetime import timedelta
-
+from tqdm import tqdm
 
 class VulnDetectionTrainer:
     def __init__(self, model, config: Dict[str, Any],
@@ -98,6 +98,11 @@ class VulnDetectionTrainer:
         self.model.classifier.train()
         total_loss = 0
 
+        # ✅ Progress bar برای آموزش
+        pbar = tqdm(self.train_loader,
+                    desc=f"🚀 Epoch {epoch + 1} | Training",
+                    ncols=100)
+
         for batch_idx, batch in enumerate(self.train_loader):
             # انتقال به device
             input_ids = batch['input_ids'].to(self.device)
@@ -128,9 +133,13 @@ class VulnDetectionTrainer:
 
             total_loss += loss.item()
 
+
             if batch_idx % 100 == 0:
                 self.logger.info(f"Batch {batch_idx}/{len(self.train_loader)}, Loss: {loss.item():.4f}")
-
+            pbar.set_postfix({
+                'Loss': f'{loss.item():.4f}',
+                'Avg': f'{total_loss / (batch_idx + 1):.4f}'
+            })
         return total_loss / len(self.train_loader)
 
     def validate(self) -> Dict[str, float]:
