@@ -38,7 +38,7 @@ class VulnDetectionTrainer:
             train_dataset,
             batch_size=config['classification']['batch_size'],
             shuffle=True,
-            num_workers=2,
+            num_workers=4,
             pin_memory=config['classification'].get('pin_memory', False),
             persistent_workers=True
         )
@@ -46,7 +46,7 @@ class VulnDetectionTrainer:
             val_dataset,
             batch_size=config['classification']['batch_size'],
             shuffle=False,
-            num_workers=2,
+            num_workers=4,
             pin_memory=config['classification'].get('pin_memory', False),
             persistent_workers=True
         )
