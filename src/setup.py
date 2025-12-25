@@ -1,4 +1,3 @@
-import os
 import yaml
 import torch
 import pandas as pd
@@ -8,7 +7,9 @@ from src.models.ensemble import EnsembleVulnDetector
 from src.training.trainer import VulnDetectionTrainer
 from src.data_pipeline.preprocessor import SecurityPreprocessor
 from src.data_pipeline.tokenizer import MultiEmbeddingTokenizer
-
+import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 class VulnDataset(torch.utils.data.Dataset):
     def __init__(self, sec_bert_encodings, word2vec, fasttext, labels):
