@@ -20,8 +20,8 @@ classification:
   batch_size: 32
   epochs: 5
   max_grad_norm: 1.0
-  num_workers: 8
-  pin_memory: true
+  num_workers: 4
+  pin_memory: false
 
 # ==================== CNN-BiLSTM ====================
 cnn_bilstm:
