@@ -290,8 +290,8 @@ class VulnDetectionTrainer:
             {'params': codebert_params, 'lr': float(config['classification']['learning_rate'])},
             {'params': other_params, 'lr': float(config['classification']['learning_rate']) * 10}
         ], weight_decay=float(config['classification']['weight_decay']))
-        print("CodeBERT params:", sum(p.numel() for p in self.model.codebert.parameters() if p.requires_grad))
-        print("Optimizer params:", sum(p.numel() for g in self.optimizer.param_groups for p in g['params']))
+        #print("CodeBERT params:", sum(p.numel() for p in self.model.codebert.parameters() if p.requires_grad))
+        #print("Optimizer params:", sum(p.numel() for g in self.optimizer.param_groups for p in g['params']))
 
         # Scheduler
         total_steps = len(self.train_loader) * config['classification']['epochs']  # ✅ تغییر
