@@ -36,7 +36,7 @@ class VulnDetectionTrainer:
             train_dataset,
             batch_size=config['classification']['batch_size'],
             shuffle=True,
-            num_workers=0,
+            num_workers=2,
             pin_memory=config['classification'].get('pin_memory', False),
             persistent_workers=True
         )
@@ -44,7 +44,7 @@ class VulnDetectionTrainer:
             val_dataset,
             batch_size=config['classification']['batch_size'],
             shuffle=False,
-            num_workers=0,
+            num_workers=2,
             pin_memory=config['classification'].get('pin_memory', False),
             persistent_workers=True
         )
@@ -93,6 +93,18 @@ class VulnDetectionTrainer:
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
+    def debug_dataloader_speed(self):
+        """تست سرعت DataLoader"""
+        print("\n🔍 تست سرعت DataLoader...")
+
+        start = time.time()
+        for i, batch in enumerate(self.train_loader):
+            if i == 10:  # فقط ۱۰ بچ تست کن
+                break
+            load_time = time.time() - start
+            print(f"Batch {i}: {load_time:.2f}s")
+            start = time.time()
+
     def train_epoch(self, epoch: int) -> float:
         """آموزش یک epoch کامل (فقط classifier)"""
         self.model.classifier.train()
@@ -102,7 +114,7 @@ class VulnDetectionTrainer:
         pbar = tqdm(self.train_loader,
                     desc=f"🚀 Epoch {epoch + 1} | Training",
                     ncols=100)
-
+        self.debug_dataloader_speed()
         for batch_idx, batch in enumerate(self.train_loader):
             # انتقال به device
             input_ids = batch['input_ids'].to(self.device)
