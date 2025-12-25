@@ -301,110 +301,6 @@ class VulnDetectionTrainer:
             'loss': np.mean(all_losses)
         }
 
-    # def train(self):
-    #     """آموزش کامل مدل"""
-    #     self.logger.info("=" * 50)
-    #     self.logger.info("شروع آموزش مدل تشخیص آسیب‌پذیری")
-    #     self.logger.info("=" * 50)
-    #
-    #     for epoch in range(self.config['classification']['epochs']):
-    #         self.logger.info(f"\n{'=' * 20} Epoch {epoch + 1}/{self.config['classification']['epochs']} {'=' * 20}")
-    #
-    #         # آموزش
-    #         train_loss = self.train_epoch(epoch)
-    #         self.logger.info(f"Train Loss: {train_loss:.4f}")
-    #
-    #         # اعتبارسنجی
-    #         metrics = self.validate()
-    #         self.logger.info(f"Val Accuracy: {metrics['accuracy']:.4f}")
-    #         self.logger.info(f"Val F1: {metrics['f1']:.4f}")
-    #         self.logger.info(f"Val Loss: {metrics['loss']:.4f}")
-    #
-    #         # Early stopping
-    #         if metrics['f1'] > self.best_f1:
-    #             self.best_f1 = metrics['f1']
-    #             self.patience_counter = 0
-    #             self._save_checkpoint(epoch, metrics)
-    #             self.logger.info("✅ مدل بهتر ذخیره شد!")
-    #         else:
-    #             self.patience_counter += 1
-    #             self.logger.info(f"📉 Early stopping counter: {self.patience_counter}/{self.config.get('patience', 3)}")
-    #
-    #             if self.patience_counter >= self.config.get('patience', 3):
-    #                 self.logger.info("🛑 Early stopping فعال شد!")
-    #                 break
-    #
-    #     self.logger.info("\n" + "=" * 50)
-    #     self.logger.info("آموزش پایان یافت!")
-    #     self.logger.info(f"بهترین F1: {self.best_f1:.4f}")
-    #     self.logger.info("=" * 50)
-    #
-    #     # بارگذاری بهترین مدل
-    #     self._load_best_model()
-    # def train(self):
-    #     """آموزش کامل مدل - با زمان‌سنجی و خروجی زیبا"""
-    #     self.logger.info("=" * 60)
-    #     self.logger.info("🎯 شروع آموزش مدل تشخیص آسیب‌پذیری")
-    #     self.logger.info(f"📱 دستگاه: {self.device}")
-    #     self.logger.info("=" * 60)
-    #
-    #     start_time = time.time()  # زمان شروع کل آموزش
-    #
-    #     for epoch in range(self.config['classification']['epochs']):
-    #         epoch_start = time.time()  # زمان شروع این epoch
-    #
-    #         # ==================== آموزش ====================
-    #         self.logger.info(f"\n🚀 Epoch {epoch + 1}/{self.config['classification']['epochs']} | شروع آموزش...")
-    #         train_loss = self.train_epoch(epoch)
-    #
-    #         # محاسبه زمان آموزش
-    #         train_time = time.time() - epoch_start
-    #
-    #         # ==================== اعتبارسنجی ====================
-    #         self.logger.info(f"🔍 شروع اعتبارسنجی...")
-    #         metrics = self.validate()
-    #
-    #         # محاسبه کل زمان epoch
-    #         epoch_time = time.time() - epoch_start
-    #
-    #         # ✅ نمایش نتایج به صورت جدولی واضح
-    #         print("\n" + "=" * 70)
-    #         print(f"📊 نتایج Epoch {epoch + 1}/{self.config['classification']['epochs']}")
-    #         print("=" * 70)
-    #         print(f"⏱️  زمان کل:              {str(timedelta(seconds=int(epoch_time)))}")
-    #         print(f"   └─ زمان آموزش:        {str(timedelta(seconds=int(train_time)))}")
-    #         print(f"   └─ زمان اعتبارسنجی:   {str(timedelta(seconds=int(epoch_time - train_time)))}")
-    #         print("─" * 70)
-    #         print(f"📈 Loss آموزش:           {train_loss:.4f}")
-    #         print(f"✅ دقت اعتبارسنجی:       {metrics['accuracy']:.4f}  (Accuracy)")
-    #         print(f"🎯 F1-Score اعتبارسنجی:  {metrics['f1']:.4f}")
-    #         print(f"📉 Loss اعتبارسنجی:      {metrics['loss']:.4f}")
-    #         print("=" * 70 + "\n")
-    #
-    #         # ==================== ذخیره و Early Stopping ====================
-    #         if metrics['f1'] > self.best_f1:
-    #             self.best_f1 = metrics['f1']
-    #             self.patience_counter = 0
-    #             self._save_checkpoint(epoch, metrics)
-    #             self.logger.info("💾 مدل بهترین ذخیره شد!")
-    #         else:
-    #             self.patience_counter += 1
-    #             self.logger.info(f"📉 Early stopping: {self.patience_counter}/{self.config.get('patience', 3)}")
-    #
-    #             if self.patience_counter >= self.config.get('patience', 3):
-    #                 self.logger.info("🛑 Early stopping فعال شد!")
-    #                 break
-    #
-    #     # ==================== خلاصه نهایی ====================
-    #     total_time = time.time() - start_time
-    #     print("\n" + "🎉" * 35)
-    #     self.logger.info(f"🏁 آموزش پایان یافت!")
-    #     self.logger.info(f"⏱️  زمان کل: {str(timedelta(seconds=int(total_time)))}")
-    #     self.logger.info(f"📊 بهترین F1: {self.best_f1:.4f}")
-    #     print("🎉" * 35)
-    #
-    #     # بارگذاری بهترین مدل
-    #     self._load_best_model()
     def train(self):
         """Full model training with timing and metrics"""
         self.logger.info("=" * 60)
@@ -464,6 +360,19 @@ class VulnDetectionTrainer:
             self.logger.error(f"Error occurred: {str(e)}")
             raise
         finally:
+            # Load best model (fix for PyTorch 2.6+)
+            try:
+                # Allow numpy objects in checkpoint (safe for own checkpoints)
+                import numpy
+                torch.serialization.add_safe_globals([numpy.core.multiarray.scalar])
+                checkpoint = torch.load('best_model.pth', weights_only=True)
+            except (AttributeError, TypeError, pickle.UnpicklingError):
+                # Fallback for compatibility
+                checkpoint = torch.load('best_model.pth', weights_only=False)
+
+            self.model.classifier.load_state_dict(checkpoint['model_state_dict'])
+            self.logger.info("Best model loaded successfully.")
+
             # Final summary
             total_time = time.time() - start_time
             self.logger.info("\n" + "=" * 60)
@@ -471,9 +380,76 @@ class VulnDetectionTrainer:
             self.logger.info(f"Total Time: {str(timedelta(seconds=int(total_time)))}")
             self.logger.info(f"Best F1: {self.best_f1:.4f}")
             self.logger.info("=" * 60)
-
-            # Load best model
-            self._load_best_model()
+    #
+    # def train(self):
+    #     """Full model training with timing and metrics"""
+    #     self.logger.info("=" * 60)
+    #     self.logger.info("Starting Vulnerability Detection Model Training")
+    #     self.logger.info(f"Device: {self.device}")
+    #     self.logger.info("=" * 60)
+    #
+    #     start_time = time.time()
+    #
+    #     try:
+    #         for epoch in range(self.config['classification']['epochs']):
+    #             epoch_start = time.time()
+    #
+    #             # Training
+    #             self.logger.info(
+    #                 f"\nEpoch {epoch + 1}/{self.config['classification']['epochs']} - Starting Training...")
+    #             train_loss = self.train_epoch(epoch)
+    #             train_time = time.time() - epoch_start
+    #
+    #             # Validation
+    #             self.logger.info(f"Starting Validation...")
+    #             metrics = self.validate()
+    #             epoch_time = time.time() - epoch_start
+    #
+    #             # Display results
+    #             print("\n" + "=" * 70)
+    #             print(f"Epoch {epoch + 1}/{self.config['classification']['epochs']} Results")
+    #             print("=" * 70)
+    #             print(f"Total Time:     {str(timedelta(seconds=int(epoch_time)))}")
+    #             print(f"  └─ Training:  {str(timedelta(seconds=int(train_time)))}")
+    #             print(f"  └─ Val:       {str(timedelta(seconds=int(epoch_time - train_time)))}")
+    #             print("─" * 70)
+    #             print(f"Train Loss:     {train_loss:.4f}")
+    #             print(f"Val Accuracy:   {metrics['accuracy']:.4f}")
+    #             print(f"Val F1-Score:   {metrics['f1']:.4f}")
+    #             print(f"Val Loss:       {metrics['loss']:.4f}")
+    #             print("=" * 70 + "\n")
+    #
+    #             # Early stopping
+    #             if metrics['f1'] > self.best_f1:
+    #                 self.best_f1 = metrics['f1']
+    #                 self.patience_counter = 0
+    #                 self._save_checkpoint(epoch, metrics)
+    #                 self.logger.info("Best model saved!")
+    #             else:
+    #                 self.patience_counter += 1
+    #                 self.logger.info(
+    #                     f"Early stopping counter: {self.patience_counter}/{self.config.get('patience', 3)}")
+    #
+    #                 if self.patience_counter >= self.config.get('patience', 3):
+    #                     self.logger.info("Early stopping triggered!")
+    #                     break
+    #
+    #     except KeyboardInterrupt:
+    #         self.logger.info("\nTraining interrupted by user!")
+    #     except Exception as e:
+    #         self.logger.error(f"Error occurred: {str(e)}")
+    #         raise
+    #     finally:
+    #         # Final summary
+    #         total_time = time.time() - start_time
+    #         self.logger.info("\n" + "=" * 60)
+    #         self.logger.info("Training Completed!")
+    #         self.logger.info(f"Total Time: {str(timedelta(seconds=int(total_time)))}")
+    #         self.logger.info(f"Best F1: {self.best_f1:.4f}")
+    #         self.logger.info("=" * 60)
+    #
+    #         # Load best model
+    #         self._load_best_model()
 
     def _save_checkpoint(self, epoch: int, metrics: Dict[str, float]):
         """ذخیره checkpoint بهترین مدل"""
