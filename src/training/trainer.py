@@ -36,16 +36,16 @@ class VulnDetectionTrainer:
             train_dataset,
             batch_size=config['classification']['batch_size'],
             shuffle=True,
-            num_workers=config['classification'].get('num_workers', 8),  # ✅ از کانفیگ بخون
-            pin_memory=config['classification'].get('pin_memory', True),  # ✅ True بذار
-            persistent_workers=True  # ✅ جدید: سرعت بیشتر در epoch‌های بعدی
+            num_workers=config['classification'].get('num_workers', 4),
+            pin_memory=config['classification'].get('pin_memory', False),
+            persistent_workers=True
         )
         self.val_loader = DataLoader(
             val_dataset,
             batch_size=config['classification']['batch_size'],
             shuffle=False,
-            num_workers=config['classification'].get('num_workers', 8),
-            pin_memory=config['classification'].get('pin_memory', True),
+            num_workers=config['classification'].get('num_workers', 4),
+            pin_memory=config['classification'].get('pin_memory', False),
             persistent_workers=True
         )
 
