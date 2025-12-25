@@ -26,6 +26,9 @@ class CodeBERTVulnClassifier(nn.Module):
             config['classification']['model_name'],
             output_hidden_states=True
         )
+        cls_dim = 768  # CodeBERT hidden size
+        lstm_dim = config['cnn_bilstm']['lstm']['units'] * 2
+        combined_dim = cls_dim + lstm_dim
 
         # فریز کردن بخشی از CodeBERT
         self._freeze_codebert_layers(config['classification'].get('freeze_layers', 6))
@@ -49,7 +52,7 @@ class CodeBERTVulnClassifier(nn.Module):
         )
 
         # Layer normalization
-        self.layer_norm = nn.LayerNorm(768 * 2)
+        self.layer_norm = nn.LayerNorm(combined_dim)
 
     def _freeze_codebert_layers(self, num_layers: int):
         """فریز کردن لایه‌های اولیه CodeBERT"""
