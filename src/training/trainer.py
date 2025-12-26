@@ -470,7 +470,7 @@ class VulnDetectionTrainer:
         """بارگذاری بهترین مدل ذخیره‌شده"""
         checkpoint = torch.load('best_model.pth')
         self.model.classifier.load_state_dict(checkpoint['model_state_dict'])
-        self.logger.info("بهترین مدل بارگذاری شد.")
+        self.logger.info("loaded the best model.")
 
     def train_anomaly_detector(self, normal_dataset):
         """
@@ -505,5 +505,5 @@ class VulnDetectionTrainer:
         # آموزش آنومالی‌دیتکشن
         self.model.train_anomaly_detector(normal_features)
 
-        self.logger.info("✅ Anomaly Detector آموزش دید!")
+        self.logger.info("✅ Anomaly Detector trained!")
         self.logger.info(f"Threshold: {self.model.anomaly_detector.reconstruction_threshold:.4f}")
