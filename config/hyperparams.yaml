@@ -8,12 +8,12 @@ data:
 # ==================== Sec-BERT (برای جاسازی) ====================
 sec_bert:
   model_name: "jackaduma/SecBERT"
-  freeze_layers: 8
+  freeze_layers: 7
 
 # ==================== طبقه‌بندی (CodeBERT) ====================
 classification:
   model_name: "microsoft/codebert-base"
-  freeze_layers: 6
+  freeze_layers: 5
   learning_rate: 0.00002
   weight_decay: 0.01
   warmup_steps: 500
