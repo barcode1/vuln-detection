@@ -7,7 +7,7 @@ import logging
 
 
 class ManualTester:
-    def __init__(self, config_path: str = 'hyperparams.yaml', model_path: str = 'best_model.pth'):
+    def __init__(self, config_path: str = '../config/hyperparams.yaml', model_path: str = 'best_model.pth'):
         """بارگذاری مدل برای تست دستی"""
         print("🔄 Loading model for manual testing...")
 
@@ -172,7 +172,7 @@ if __name__ == '__main__':
 
     # Initialize tester
     tester = ManualTester(
-        config_path='config.yaml',
+        config_path='../config/hyperparams.yaml',
         model_path='best_model.pth'
     )
 
