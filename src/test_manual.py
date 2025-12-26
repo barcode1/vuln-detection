@@ -20,7 +20,7 @@ class ManualTester:
         self.tokenizer.load_word_embeddings()
 
         # Initialize model
-        self.model = VulnerabilityClassifier(self.config)
+        self.model = CodeBERTVulnClassifier(self.config)
 
         # Load checkpoint
         checkpoint = torch.load(model_path, weights_only=False)
