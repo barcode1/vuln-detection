@@ -1,7 +1,7 @@
 import torch
 import numpy as np
-from src.models.classifier import VulnerabilityClassifier
-from src.data.tokenizer import MultiEmbeddingTokenizer
+from src.models.classifier import CodeBERTVulnClassifier
+from src.data_pipeline.tokenizer import MultiEmbeddingTokenizer
 import yaml
 import logging
 
