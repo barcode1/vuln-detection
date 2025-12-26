@@ -4,10 +4,12 @@ from src.models.classifier import CodeBERTVulnClassifier
 from src.data_pipeline.tokenizer import MultiEmbeddingTokenizer
 import yaml
 import logging
+import os
 
 
 class ManualTester:
-    def __init__(self, config_path: str = '../config/hyperparams.yaml', model_path: str = 'best_model.pth'):
+
+    def __init__(self, config_path: str = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config', 'hyperparams.yaml'), model_path: str = 'best_model.pth'):
         """بارگذاری مدل برای تست دستی"""
         print("🔄 Loading model for manual testing...")
 
@@ -172,7 +174,7 @@ if __name__ == '__main__':
 
     # Initialize tester
     tester = ManualTester(
-        config_path='../config/hyperparams.yaml',
+        config_path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config', 'hyperparams.yaml'),
         model_path='best_model.pth'
     )
 
