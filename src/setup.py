@@ -155,7 +155,7 @@ def main():
     trainer.train()
     # ==================== train Anomaly Detector ====================
     print("\n" + "=" * 60)
-    print("🚀 شروع آموزش Anomaly Detector روی داده‌های Normal...")
+    print("🚀 start training anomaly_detection on sample Normal...")
     print("=" * 60)
 
     # just data Normal (label == 0)
