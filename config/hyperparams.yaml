@@ -32,7 +32,7 @@ cnn_bilstm:
 
 # ==================== Focal_Loss ====================
 focal_loss:
-  alpha: [0.29, 0.30, 0.42, 0.35]
+  alpha: [0.216, 0.221, 0.310, 0.253]
   gamma: 2.0
 classifier_dropout: 0.3
 
