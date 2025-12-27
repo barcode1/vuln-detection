@@ -31,7 +31,7 @@ class CodeBERTVulnClassifier(nn.Module):
         combined_dim = cls_dim + lstm_dim
 
         # فریز کردن بخشی از CodeBERT
-        self._freeze_codebert_layers(config['classification'].get('freeze_layers', 5))
+        self._freeze_codebert_layers(config['classification'].get('freeze_layers', 4))
 
         # Classification head
         self.classifier = nn.Sequential(
@@ -46,7 +46,7 @@ class CodeBERTVulnClassifier(nn.Module):
 
         # Loss
         self.loss_fn = FocalLoss(
-            alpha=config.get('focal_alpha', [0.25, 0.25, 0.25, 0.25]),
+            alpha=config.get('focal_alpha', [0.216, 0.221, 0.310, 0.253]),
             gamma=config.get('focal_gamma', 2.0),
             num_classes=self.num_labels
         )
