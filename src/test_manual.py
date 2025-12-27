@@ -1,182 +1,190 @@
 import torch
+import pandas as pd
 import numpy as np
-from src.models.classifier import CodeBERTVulnClassifier
-from src.data_pipeline.tokenizer import MultiEmbeddingTokenizer
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix, classification_report
+from torch.utils.data import Dataset, DataLoader
 import yaml
-import logging
 import os
+from src.models.ensemble import EnsembleVulnDetector
+from src.data_pipeline.preprocessor import SecurityPreprocessor
+from src.data_pipeline.tokenizer import MultiEmbeddingTokenizer
+
+# دیتاست تست (همان ساختار VulnDataset)
+class TestVulnDataset(Dataset):
+    def __init__(self, sec_bert_encodings, word2vec, fasttext, labels=None):
+        self.sec_bert = sec_bert_encodings
+        self.word2vec = word2vec
+        self.fasttext = fasttext
+        self.labels = labels  # می‌تونه None باشه اگر unlabeled باشه
+
+    def __getitem__(self, idx):
+        item = {k: v[idx] for k, v in self.sec_bert.items()}
+        item['word2vec_embeds'] = torch.tensor(self.word2vec[idx])
+        item['fasttext_embeds'] = torch.tensor(self.fasttext[idx])
+        if self.labels is not None:
+            item['labels'] = torch.tensor(self.labels[idx], dtype=torch.long)
+        return item
+
+    def __len__(self):
+        return len(self.word2vec)
 
 
-class ManualTester:
+def load_model(config_path: str, model_path: str, device: str = 'cuda' if torch.cuda.is_available() else 'cpu'):
+    """بارگذاری مدل آموزش‌دیده"""
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = yaml.safe_load(f)
 
-    def __init__(self, config_path: str = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config', 'hyperparams.yaml'), model_path: str = 'best_model.pth'):
-        """بارگذاری مدل برای تست دستی"""
-        print("🔄 Loading model for manual testing...")
-
-        # Load config
-        with open(config_path, 'r', encoding='utf-8') as f:
-            self.config = yaml.safe_load(f)
-
-        # Initialize tokenizer
-        self.tokenizer = MultiEmbeddingTokenizer(self.config)
-        self.tokenizer.load_word_embeddings()
-
-        # Initialize model
-        self.model = CodeBERTVulnClassifier(self.config)
-
-        # Load checkpoint
-        checkpoint = torch.load(model_path, weights_only=False)
-        self.model.classifier.load_state_dict(checkpoint['model_state_dict'])
-
-        # Move to GPU if available
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = self.model.to(self.device)
-        self.model.eval()
-
-        # Class names
-        self.class_names = ['SQLi', 'XSS', 'CommandInjection', 'Normal']
-
-        print("✅ Model loaded successfully!")
-        print(f"📱 Device: {self.device}")
-
-    def predict(self, text: str):
-        """پیش‌بینی برای یک متن"""
-        print(f"\n{'=' * 70}")
-        print(f"🔍 Input: {text[:100]}...")
-        print('=' * 70)
-
-        # Encode input (same as training)
-        encoded = self.tokenizer.encode([text])
-
-        # Move to device
-        input_ids = encoded['sec_bert']['input_ids'].to(self.device)
-        attention_mask = encoded['sec_bert']['attention_mask'].to(self.device)
-        word2vec = encoded['word2vec'].to(self.device)
-        fasttext = encoded['fasttext'].to(self.device)
-
-        # Predict
-        with torch.no_grad():
-            outputs = self.model.classifier(
-                input_ids, attention_mask, word2vec, fasttext
-            )
-
-            # Classifier results
-            logits = outputs['logits']
-            probs = torch.softmax(logits, dim=1)
-            classifier_pred = torch.argmax(probs, dim=1).item()
-
-            # Anomaly detection
-            features = outputs['features']
-            anomaly_score = self.model.anomaly_detector.detect_anomaly(features)
-            is_anomaly = anomaly_score > self.config['anomaly_detection']['anomaly_threshold']
-
-            # Ensemble decision
-            fusion_weight = self.config['fusion']['weights'][0]  # classifier weight
-            ensemble_prob = (probs[0, classifier_pred] * fusion_weight +
-                             (1 - anomaly_score) * (1 - fusion_weight))
-
-        # Display results
-        print("\n📊 Classifier Results:")
-        print("─" * 40)
-        for i, class_name in enumerate(self.class_names):
-            print(f"{class_name:15s}: {probs[0, i]:.4f}")
-
-        print(f"\n🎯 Primary Prediction: {self.class_names[classifier_pred]}")
-        print(f"   Confidence: {probs[0, classifier_pred]:.4f}")
-
-        print(f"\n🔍 Anomaly Detection:")
-        print("─" * 40)
-        print(f"Anomaly Score: {anomaly_score:.4f}")
-        print(f"Is Anomaly: {'Yes ⚠️' if is_anomaly else 'No ✅'}")
-
-        print(f"\n⚖️  Ensemble Decision:")
-        print("─" * 40)
-        print(f"Final Score: {ensemble_prob:.4f}")
-
-        final_decision = (self.class_names[classifier_pred]
-                          if not is_anomaly else "ANOMALY ⚠️")
-        print(f"Final Label: {final_decision}")
-
-        return {
-            'probs': probs.cpu().numpy(),
-            'prediction': classifier_pred,
-            'prediction_name': self.class_names[classifier_pred],
-            'anomaly_score': anomaly_score,
-            'is_anomaly': is_anomaly,
-            'ensemble_prob': ensemble_prob,
-            'final_decision': final_decision
-        }
-
-    def interactive_test(self):
-        """حلقه تست دستی"""
-        print("\n" + "=" * 70)
-        print("🧪 Manual Testing Mode (Ctrl+C to exit)")
-        print("=" * 70)
-
-        test_cases = [
-            "SELECT * FROM users WHERE id = 1",
-            "<script>alert('XSS')</script>",
-            "rm -rf /var/www/html",
-            "Hello this is normal text",
-            "admin' OR '1'='1",
-            "<img src=x onerror=alert(1)>",
-            "DROP TABLE students;--",
-            "Normal API request with parameters"
-        ]
-
-        print("\n📋 Sample test cases:")
-        for i, case in enumerate(test_cases, 1):
-            print(f"{i}. {case[:60]}...")
-
-        while True:
-            try:
-                print("\n" + "-" * 70)
-                print("Choose option:")
-                print("1. Use sample test case")
-                print("2. Enter custom text")
-                print("3. Exit")
-                choice = input("> ").strip()
-
-                if choice == '1':
-                    print("\nEnter test case number (1-8):")
-                    num = int(input("> ").strip())
-                    if 1 <= num <= len(test_cases):
-                        text = test_cases[num - 1]
-                    else:
-                        print("❌ Invalid number!")
-                        continue
-
-                elif choice == '2':
-                    print("\nEnter your text:")
-                    text = input("> ").strip()
-
-                elif choice == '3':
-                    print("👋 Exiting...")
-                    break
-                else:
-                    print("❌ Invalid choice!")
-                    continue
-
-                # Predict
-                if text:
-                    self.predict(text)
-
-            except KeyboardInterrupt:
-                print("\n👋 Exiting...")
-                break
-            except Exception as e:
-                print(f"❌ Error: {str(e)}")
+    model = EnsembleVulnDetector(config)
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.to(device)
+    model.eval()  # مهم: حالت ارزیابی برای فعال شدن آنومالی
+    print(f"✅ مدل بارگذاری شد از: {model_path}")
+    print(f"   دستگاه: {device}")
+    return model, config
 
 
-if __name__ == '__main__':
-    # Setup logging
-    logging.basicConfig(level=logging.INFO)
+def test_model(
+    model,
+    config,
+    csv_path: str,
+    text_column: str = 'Sentence',
+    label_column: str = 'label',  # یا ستون‌های باینری مثل SQLInjection, XSS, ...
+    batch_size: int = 32,
+    device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+):
+    """تست کامل مدل روی یک دیتاست CSV"""
+    print("\n" + "="*60)
+    print("🚀 شروع تست مدل...")
+    print("="*60)
 
-    # Initialize tester
-    tester = ManualTester(
-        config_path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config', 'hyperparams.yaml'),
-        model_path='best_model.pth'
+    # خواندن دیتاست
+    df = pd.read_csv(csv_path)
+    print(f"تعداد نمونه‌ها: {len(df)}")
+
+    # تبدیل برچسب‌ها اگر باینری باشه
+    if label_column not in df.columns:
+        print("ستون label وجود ندارد → تبدیل از ستون‌های باینری...")
+        def get_label(row):
+            if row.get('SQLInjection', 0) == 1: return 1
+            elif row.get('XSS', 0) == 1: return 2
+            elif row.get('CommandInjection', 0) == 1: return 3
+            elif row.get('Normal', 0) == 1: return 0
+            else: return -1
+        df['label'] = df.apply(get_label, axis=1)
+        df = df[df['label'] != -1].reset_index(drop=True)
+        label_column = 'label'
+
+    texts = df[text_column].tolist()
+    labels = df[label_column].values if label_column in df.columns else None
+
+    # پیش‌پردازش
+    preprocessor = SecurityPreprocessor(config.get('preprocessing', {}))
+    processed_texts = preprocessor.fit_transform(texts)
+
+    # توکنایزر
+    tokenizer = MultiEmbeddingTokenizer(config)
+    tokenizer_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'embeddings')
+    tokenizer.load_word_embeddings(tokenizer_path)
+
+    # جاسازی‌ها
+    embeddings = tokenizer.encode(processed_texts)
+
+    # دیتاست و دیتالودر
+    dataset = TestVulnDataset(
+        embeddings['sec_bert'],
+        embeddings['word2vec'].numpy(),
+        embeddings['fasttext'].numpy(),
+        labels
     )
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
 
-    # Start interactive testing
-    tester.interactive_test()
+    # پیش‌بینی‌ها
+    all_preds = []
+    all_labels = []
+    all_anomaly_scores = []
+
+    with torch.no_grad():
+        for batch in dataloader:
+            input_ids = batch['input_ids'].to(device)
+            attention_mask = batch['attention_mask'].to(device)
+            word2vec = batch['word2vec_embeds'].to(device)
+            fasttext = batch['fasttext_embeds'].to(device)
+
+            outputs = model(input_ids, attention_mask, word2vec, fasttext)
+
+            logits = outputs['logits']
+            preds = torch.argmax(logits, dim=1).cpu().numpy()
+            anomaly_scores = outputs['anomaly_scores'].cpu().numpy().flatten()
+
+            all_preds.extend(preds)
+            all_anomaly_scores.extend(anomaly_scores)
+            if 'labels' in batch:
+                all_labels.extend(batch['labels'].cpu().numpy())
+
+    # گزارش نتایج
+    print("\n" + "="*60)
+    print("📊 نتایج تست")
+    print("="*60)
+
+    if labels is not None:
+        accuracy = accuracy_score(all_labels, all_preds)
+        precision, recall, f1, _ = precision_recall_fscore_support(all_labels, all_preds, average=None)
+        class_names = ['Normal', 'SQLi', 'XSS', 'CMDi']
+
+        print(f"دقت کلی (Accuracy): {accuracy:.4f}")
+        print("\nگزارش تفصیلی هر کلاس:")
+        for i, name in enumerate(class_names):
+            print(f"   {name:8} → Precision: {precision[i]:.4f} | Recall: {recall[i]:.4f} | F1: {f1[i]:.4f}")
+
+        print("\nClassification Report:")
+        print(classification_report(all_labels, all_preds, target_names=class_names, digits=4))
+
+        print("\nماتریس درهم‌ریختگی (Confusion Matrix):")
+        cm = confusion_matrix(all_labels, all_preds)
+        print("       Pred →  Normal  SQLi   XSS   CMDi")
+        for i, row in enumerate(cm):
+            print(f"True {class_names[i]:6} → {row}")
+
+        # نمونه‌های اشتباه با تشخیص آنومالی
+        print("\n🔍 ۱۰ نمونه اشتباه (با امتیاز آنومالی):")
+        errors = np.where(np.array(all_preds) != np.array(all_labels))[0]
+        for idx in errors[:10]:
+            text = texts[idx]
+            true = class_names[all_labels[idx]]
+            pred = class_names[all_preds[idx]]
+            anomaly = all_anomaly_scores[idx]
+            print(f"   متن: {text[:80]}{'...' if len(text)>80 else ''}")
+            print(f"   درست: {true} | پیش‌بینی: {pred} | آنومالی: {anomaly:.2f}")
+            print("   ---")
+    else:
+        print("دیتاست بدون برچسب → فقط پیش‌بینی انجام شد.")
+        for i in range(min(10, len(texts))):
+            text = texts[i]
+            pred = ['Normal', 'SQLi', 'XSS', 'CMDi'][all_preds[i]]
+            anomaly = all_anomaly_scores[i]
+            print(f"   متن: {text[:80]}...")
+            print(f"   پیش‌بینی: {pred} | امتیاز آنومالی: {anomaly:.2f}")
+            print("   ---")
+
+    print(f"\nمیانگین امتیاز آنومالی در کل دیتاست: {np.mean(all_anomaly_scores):.4f}")
+    print("="*60)
+    print("✅ تست تمام شد!")
+
+
+# استفاده ساده
+if __name__ == "__main__":
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    CONFIG_PATH = os.path.join(BASE_DIR, 'config', 'hyperparams.yaml')
+    MODEL_PATH = os.path.join(BASE_DIR, 'final_model.pth')
+    TEST_CSV_PATH = os.path.join(BASE_DIR, 'data', 'datasets', 'SQLInjection_XSS_CommandInjection_MixDataset.1.0.0.csv')  # مسیر دیتاست تست
+
+    model, config = load_model(CONFIG_PATH, MODEL_PATH)
+
+    test_model(
+        model=model,
+        config=config,
+        csv_path=TEST_CSV_PATH,
+        text_column='Sentence',
+        label_column='label',
+        batch_size=32
+    )

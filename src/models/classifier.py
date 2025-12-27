@@ -31,7 +31,7 @@ class CodeBERTVulnClassifier(nn.Module):
         combined_dim = cls_dim + lstm_dim
 
         # فریز کردن بخشی از CodeBERT
-        self._freeze_codebert_layers(config['classification'].get('freeze_layers', 6))
+        self._freeze_codebert_layers(config['classification'].get('freeze_layers', 5))
 
         # Classification head
         self.classifier = nn.Sequential(

@@ -26,7 +26,7 @@ classification:
 # ==================== CNN-BiLSTM ====================
 cnn_bilstm:
   lstm:
-    units: 256
+    units: 384
     dropout: 0.3
   dropout: 0.3
 
