@@ -105,11 +105,11 @@ def main():
     print(f"✅ Using text column: '{TEXT_COLUMN}'")
     print(f"✅ Using label column: '{LABEL_COLUMN}'")
 
-    # ✅ پیش‌پردازش
+    # ✅ preprocessing
     preprocessor = SecurityPreprocessor(config.get('preprocessing', {}))
     processed_texts = preprocessor.fit_transform(df[TEXT_COLUMN].tolist())
 
-    # ✅ آموزش یا بارگذاری Word2Vec/FastText
+    # ✅ train or loading Word2Vec/FastText
     tokenizer = MultiEmbeddingTokenizer(config)
     tokenizer_path = os.path.join(BASE_DIR, 'data', 'embeddings')
 
@@ -127,10 +127,10 @@ def main():
         tokenizer.train_word_embeddings(processed_texts)
         tokenizer.save_word_embeddings(tokenizer_path)
 
-    # ✅ تولید جاسازی‌ها
+    # ✅ generate embedding
     embeddings = tokenizer.encode(processed_texts)
 
-    # ✅ تقسیم داده‌ها
+    # ✅ splite data
     train_idx, val_idx = train_test_split(
         range(len(df)), test_size=0.2, random_state=42, stratify=df[LABEL_COLUMN]
     )
@@ -149,7 +149,7 @@ def main():
         df[LABEL_COLUMN].iloc[val_idx].values
     )
 
-    # ✅ ساخت مدل و آموزش
+    # ✅ create model and train
     model = EnsembleVulnDetector(config)
     trainer = VulnDetectionTrainer(model, config, train_dataset, val_dataset)
     trainer.train()
@@ -158,7 +158,7 @@ def main():
     print("🚀 شروع آموزش Anomaly Detector روی داده‌های Normal...")
     print("=" * 60)
 
-    # فقط داده‌های Normal (label == 0)
+    # just data Normal (label == 0)
     normal_df = df[df['label'] == 0].reset_index(drop=True)
 
     if len(normal_df) == 0:
@@ -169,15 +169,15 @@ def main():
     #preprocess for anomaly_detection
     normal_texts = preprocessor.fit_transform(normal_df[TEXT_COLUMN].tolist())
 
-    # تولید جاسازی‌ها
+    # generate embedding
     normal_embeddings = tokenizer.encode(normal_texts)
 
-    # ساخت دیتاست فقط Normal
+    # create dataset just Normal
     normal_dataset = VulnDataset(
         {k: v for k, v in normal_embeddings['sec_bert'].items()},
         normal_embeddings['word2vec'].numpy(),
         normal_embeddings['fasttext'].numpy(),
-        normal_df[LABEL_COLUMN].values  # همه 0 هستن
+        normal_df[LABEL_COLUMN].values
     )
 
     # train Anomaly Detector

@@ -1,24 +1,24 @@
-# ==================== اطلاعات پایه ====================
+# ==================== base information ====================
 num_labels: 4
 
-# ==================== داده‌ها ====================
+# ==================== data ====================
 data:
   max_seq_length: 128
 
-# ==================== Sec-BERT (برای جاسازی) ====================
+# ==================== Sec-BERT (for embedding) ====================
 sec_bert:
   model_name: "jackaduma/SecBERT"
   freeze_layers: 6
 
-# ==================== طبقه‌بندی (CodeBERT) ====================
+# ==================== classifire (CodeBERT) ====================
 classification:
   model_name: "microsoft/codebert-base"
   freeze_layers: 4
-  learning_rate: 0.00003
+  learning_rate: 0.00005
   weight_decay: 0.01
   warmup_steps: 500
   batch_size: 32
-  epochs: 5
+  epochs: 7
   max_grad_norm: 1.0
   num_workers: 4
   pin_memory: False
@@ -30,13 +30,13 @@ cnn_bilstm:
     dropout: 0.3
   dropout: 0.3
 
-# ==================== طبقه‌بندی ====================
+# ==================== Focal_Loss ====================
 focal_loss:
   alpha: [0.25, 0.25, 0.25, 0.25]
   gamma: 2.0
 classifier_dropout: 0.3
 
-# ==================== آنومالی‌دیتکشن ====================
+# ==================== anomaly_detection ====================
 anomaly_detection:
   autoencoder:
     latent_dim: 32
@@ -51,7 +51,7 @@ anomaly_detection:
 fusion:
   weights: [0.6, 0.4]  # [classifier, anomaly]
   threshold: 0.5
-# ==================== جاسازی‌ها ====================
+# ==================== embedding ====================
 embedding:
   embedding_dim: 300
   embedding_dropout: 0.2
