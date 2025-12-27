@@ -14,7 +14,7 @@ sec_bert:
 classification:
   model_name: "microsoft/codebert-base"
   freeze_layers: 4
-  learning_rate: 0.00005
+  learning_rate: 0.00001
   weight_decay: 0.01
   warmup_steps: 500
   batch_size: 32
