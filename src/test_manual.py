@@ -38,8 +38,8 @@ def load_model(config_path: str, model_path: str, device: str = 'cuda' if torch.
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
     model.eval()  # مهم: حالت ارزیابی برای فعال شدن آنومالی
-    print(f"✅ مدل بارگذاری شد از: {model_path}")
-    print(f"   دستگاه: {device}")
+    print(f"✅ loaded model in: {model_path}")
+    print(f"   divice: {device}")
     return model, config
 
 
@@ -54,12 +54,12 @@ def test_model(
 ):
     """تست کامل مدل روی یک دیتاست CSV"""
     print("\n" + "="*60)
-    print("🚀 شروع تست مدل...")
+    print("🚀 start test model...")
     print("="*60)
 
     # خواندن دیتاست
     df = pd.read_csv(csv_path)
-    print(f"تعداد نمونه‌ها: {len(df)}")
+    print(f"count of sample: {len(df)}")
 
     # تبدیل برچسب‌ها اگر باینری باشه
     if label_column not in df.columns:
@@ -132,14 +132,14 @@ def test_model(
         class_names = ['Normal', 'SQLi', 'XSS', 'CMDi']
 
         print(f"دقت کلی (Accuracy): {accuracy:.4f}")
-        print("\nگزارش تفصیلی هر کلاس:")
+        print("\nreport for any class::")
         for i, name in enumerate(class_names):
             print(f"   {name:8} → Precision: {precision[i]:.4f} | Recall: {recall[i]:.4f} | F1: {f1[i]:.4f}")
 
         print("\nClassification Report:")
         print(classification_report(all_labels, all_preds, target_names=class_names, digits=4))
 
-        print("\nماتریس درهم‌ریختگی (Confusion Matrix):")
+        print("\n(Confusion Matrix):")
         cm = confusion_matrix(all_labels, all_preds)
         print("       Pred →  Normal  SQLi   XSS   CMDi")
         for i, row in enumerate(cm):
@@ -154,7 +154,7 @@ def test_model(
             pred = class_names[all_preds[idx]]
             anomaly = all_anomaly_scores[idx]
             print(f"   متن: {text[:80]}{'...' if len(text)>80 else ''}")
-            print(f"   درست: {true} | پیش‌بینی: {pred} | آنومالی: {anomaly:.2f}")
+            print(f"   true: {true} | predection: {pred} | anomaly: {anomaly:.2f}")
             print("   ---")
     else:
         print("دیتاست بدون برچسب → فقط پیش‌بینی انجام شد.")
@@ -163,12 +163,12 @@ def test_model(
             pred = ['Normal', 'SQLi', 'XSS', 'CMDi'][all_preds[i]]
             anomaly = all_anomaly_scores[i]
             print(f"   متن: {text[:80]}...")
-            print(f"   پیش‌بینی: {pred} | امتیاز آنومالی: {anomaly:.2f}")
+            print(f"   predection: {pred} | score anomaly: {anomaly:.2f}")
             print("   ---")
 
-    print(f"\nمیانگین امتیاز آنومالی در کل دیتاست: {np.mean(all_anomaly_scores):.4f}")
+    print(f"\n ave score anomaly in total dataset: {np.mean(all_anomaly_scores):.4f}")
     print("="*60)
-    print("✅ تست تمام شد!")
+    print("✅ test finished...!")
 
 
 # استفاده ساده
